@@ -1,0 +1,36 @@
+/* =========================================================================
+   TOUR BAR (cinematic tour transport) & FINALE BAR
+   ========================================================================= */
+#tourbar{position:fixed;left:50%;bottom:calc(9vh + 14px);transform:translateX(-50%);width:min(1080px,94vw);z-index:14;padding:12px 18px 10px;
+  background:linear-gradient(180deg,rgba(14,8,20,.72),rgba(8,5,12,.86));border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 20px 60px rgba(0,0,0,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  opacity:.16;transition:opacity .5s,transform .5s;font-family:var(--serif)}
+#tourbar.wake,#tourbar.paused,#tourbar:hover{opacity:1}
+.tb-chapter{display:flex;align-items:baseline;gap:12px;margin-bottom:8px;min-height:20px}
+.tb-cn{font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--ember)}
+.tb-cs{font-size:12.5px;font-style:italic;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-track{position:relative;height:16px;cursor:pointer;touch-action:none}
+.tb-track:before{content:"";position:absolute;left:0;right:0;top:7px;height:3px;border-radius:2px;background:rgba(255,255,255,.12)}
+.tb-fill{position:absolute;left:0;top:7px;height:3px;border-radius:2px;background:linear-gradient(90deg,#b8380c,#ffc27a);box-shadow:0 0 10px #ff8a2a;pointer-events:none}
+.tb-ticks i{position:absolute;top:4px;width:2px;height:9px;margin-left:-1px;background:rgba(255,220,180,.55);border-radius:1px;pointer-events:none}
+.tb-head{position:absolute;top:2px;width:13px;height:13px;margin-left:-6.5px;border-radius:50%;background:#fff2dc;box-shadow:0 0 0 3px rgba(255,138,42,.35),0 0 14px #ff8a2a;pointer-events:none}
+.tb-tip{position:absolute;bottom:20px;transform:translateX(-50%);padding:4px 10px;border-radius:4px;background:rgba(10,6,14,.92);border:1px solid var(--line);font-size:12px;color:var(--bone);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.tb-track:hover .tb-tip{opacity:1}
+.tb-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin-top:8px}
+.tb-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tb-btn{cursor:pointer;min-width:34px;height:32px;padding:0 10px;border-radius:6px;border:1px solid var(--line2);background:rgba(20,10,24,.6);color:var(--bone);font:14px var(--serif);transition:all .18s}
+.tb-btn:hover{border-color:var(--ember);color:#fff;box-shadow:0 0 16px rgba(255,120,30,.3)}
+.tb-play{min-width:46px;font-size:15px;border-color:var(--pumpkin);background:rgba(255,138,42,.22)}
+.tb-exit{letter-spacing:.1em;text-transform:uppercase;font-size:12px;border-color:var(--ghost);color:var(--ghost)}
+.tb-exit:hover{box-shadow:0 0 18px rgba(120,255,200,.35);border-color:var(--ghost)}
+.tb-time{margin-left:6px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.tb-chip{cursor:pointer;height:28px;padding:0 9px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--dim);font:12px var(--serif);display:inline-flex;align-items:center;gap:5px;transition:all .18s}
+.tb-chip kbd{font-size:9.5px;min-width:1.5em;height:1.5em;padding:0 .3em}
+.tb-chip:hover{color:#fff;border-color:var(--line2)}.tb-chip.on{color:#fff;border-color:var(--ember);background:rgba(255,138,42,.26);box-shadow:0 0 12px rgba(255,120,30,.25)}
+.tb-help{margin-top:8px;font-size:11px;color:rgba(239,228,207,.42);letter-spacing:.05em;text-align:center}
+#showbar{position:fixed;left:50%;bottom:calc(9vh + 18px);transform:translateX(-50%);width:min(560px,86vw);z-index:14;text-align:center;font-family:var(--serif)}
+.sb-title{font-size:13px;letter-spacing:.5em;text-transform:uppercase;color:var(--ember);text-shadow:0 0 18px rgba(255,120,30,.6)}
+.sb-track{margin:10px auto 8px;height:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.sb-fill{height:100%;width:0;background:linear-gradient(90deg,#9a50ff,#ff8a2a,#ffe0a0);box-shadow:0 0 10px #ff8a2a}
+.sb-hint{font-size:11.5px;font-style:italic;color:var(--dim);letter-spacing:.06em}
+@media (max-width:760px){#tourbar{bottom:12px;padding:10px 10px 8px}.tb-cams span{display:none}.tb-help{display:none}}

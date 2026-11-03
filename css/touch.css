@@ -1,0 +1,18 @@
+/* =========================================================================
+   TOUCH CONTROLS — virtual stick (left), look area (right), action buttons, top bar.
+   Shown only when body.touch is set (first touch or coarse pointer).
+   ========================================================================= */
+#touchui{position:fixed;inset:0;z-index:11;pointer-events:none;display:none;zoom:var(--ui)}
+body.touch #touchui.on{display:block}
+.tu-stick{position:absolute;left:calc(26px + var(--safe-l));bottom:calc(26px + var(--safe-b));width:140px;height:140px;border-radius:50%;pointer-events:auto;touch-action:none;
+  background:radial-gradient(circle,rgba(255,190,130,.08),rgba(14,9,20,.45) 70%);border:1px solid var(--line2);box-shadow:var(--shadow)}
+.tu-knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(255,210,160,.55),rgba(255,138,42,.35));border:1px solid var(--ember);box-shadow:var(--glow)}
+.tu-btns{position:absolute;right:calc(22px + var(--safe-r));bottom:calc(26px + var(--safe-b));display:grid;grid-template-columns:repeat(2,64px);gap:12px;pointer-events:auto}
+.tu-b{width:64px;height:64px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;touch-action:none;
+  background:var(--glass);border:1px solid var(--line2);color:var(--bone);font:600 9px var(--sans);letter-spacing:.08em;text-transform:uppercase;box-shadow:var(--shadow);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.tu-b .ico{width:22px;height:22px;color:var(--ember)}
+.tu-b.main{grid-column:2;grid-row:1/span 2;align-self:center;width:76px;height:76px;border-color:var(--pumpkin);background:rgba(255,138,42,.24)}
+.tu-b.on,.tu-b:active{background:rgba(255,138,42,.4);border-color:var(--ember)}
+.tu-top{position:absolute;top:calc(var(--safe-t) + 230px);right:calc(12px + var(--safe-r));display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+.tu-top .tu-b{width:46px;height:46px}
+body.touch #cxfab{display:none!important}

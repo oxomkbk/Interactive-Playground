@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#0b0810" />
+<title>Hollowmoor Night Carnival</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%83%3C/text%3E%3C/svg%3E" />
+<!-- Hollowmoor — Halloween Night Carnival. Entry point: js/main.js. See README.md for structure & running. -->
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/console.css" />
+<link rel="stylesheet" href="css/tour.css" />
+<link rel="stylesheet" href="css/touch.css" />
+<script>
+  // Early guard: friendly screens for no-WebGL, failed downloads and boot errors (runs before any module).
+  (function () {
+    var zh = /^zh/i.test(navigator.language || '') || (function () { try { return localStorage.getItem('hollowmoor-lang') === 'zh'; } catch (e) { return false; } })();
+    function fail(title, body) {
+      if (window.__HM_BOOTED) return; var el = document.getElementById('fatal'); if (!el) return;
+      el.querySelector('h2').textContent = title; el.querySelector('p').textContent = body; el.classList.remove('hidden');
+    }
+    window.__hmFail = fail;
+    var c = document.createElement('canvas'), gl = null; try { gl = c.getContext('webgl2'); } catch (e) {}
+    window.__HM_NOGL = !gl;
+    window.addEventListener('DOMContentLoaded', function () {
+      if (!gl) fail(zh ? '需要 WebGL 2' : 'WebGL 2 is required', zh ? '你的浏览器或显卡未启用 WebGL 2。请使用最新版 Chrome、Edge、Firefox 或 Safari，并开启硬件加速。' : 'Your browser or GPU has WebGL 2 turned off. Use a current Chrome, Edge, Firefox or Safari with hardware acceleration enabled.');
+      if (location.protocol === 'file:') fail(zh ? '请通过本地服务器打开' : 'Open through a local server', zh ? '浏览器禁止从本地文件加载模块。请在项目文件夹运行：python3 -m http.server 8765，然后访问 http://localhost:8765' : 'Browsers block ES modules from file://. In the project folder run: python3 -m http.server 8765 — then open http://localhost:8765');
+    });
+    window.addEventListener('error', function (e) {
+      if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) fail(zh ? '资源下载失败' : 'A download failed', zh ? '无法加载所需文件（Three.js 来自 CDN）。请检查网络后重新加载。' : 'A required file could not be loaded (Three.js comes from a CDN). Check your connection and reload.');
+      else if (!window.__HM_BOOTED) fail(zh ? '启动时出错' : 'Something went wrong while starting', (e.message || '') + (zh ? ' —— 请重新加载页面。' : ' — please reload the page.'));
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) { if (!window.__HM_BOOTED) fail(zh ? '启动时出错' : 'Something went wrong while starting', String(e.reason && e.reason.message || e.reason) + (zh ? ' —— 请重新加载页面。' : ' — please reload the page.')); });
+    setTimeout(function () { if (!window.__HM_BOOTED && !window.__HM_LOADING) fail(zh ? '加载时间过长' : 'This is taking too long', zh ? '乐园没有开始加载，可能是网络问题导致 Three.js 无法下载。请重新加载。' : 'The park never started loading — usually Three.js could not be downloaded. Please reload.'); }, 20000);
+  })();
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="c" aria-label="Hollowmoor 3D view"></canvas>
+<div id="letterbox"><i></i><i></i></div>
+
+<div id="hud" class="hidden">
+  <div id="zone"><div class="zname"></div><div class="zsub"></div></div>
+  <div id="compass" aria-hidden="true"><div class="cp-strip"></div><div class="cp-wp hidden"><i></i><span></span></div><div class="cp-center"></div></div>
+  <div id="progress" role="status">
+    <div id="souls" class="stat soul" data-i18n-title="Souls freed"><span data-icon="soul"></span><b id="soulCount">0</b><small>/13</small></div>
+    <div class="stat" data-i18n-title="Candy"><span data-icon="candy"></span><b id="candyCount">0</b></div>
+    <div class="stat" data-i18n-title="Ghosts banished"><span data-icon="ghost"></span><b id="ghostCount">0</b></div>
+    <div class="stat act" data-i18n-title="Attractions complete"><span data-icon="ticket"></span><b id="actCount">0</b><small id="actTotal">/30</small></div>
+  </div>
+  <div id="objective" class="hidden"><div class="ot"></div><div class="os"></div><div class="ob"><i></i></div></div>
+  <div id="nextup" class="hidden"><span data-icon="route"></span><div><div class="nu-k" data-i18n="Next up">Next up</div><div class="nu-n"></div></div><div class="nu-d"></div></div>
+  <div id="waypoint" class="hidden"><i></i><span></span></div>
+  <div id="crosshair"></div>
+  <div id="prompt" class="hidden"><kbd>E</kbd><span></span></div>
+  <canvas id="minimap" width="360" height="360"></canvas>
+  <div id="keys">
+    <span><kbd>WASD</kbd><i data-i18n="Move">Move</i></span><span><kbd>E</kbd><i data-i18n="Interact">Interact</i></span><span><kbd>F</kbd><i data-i18n="Lantern">Lantern</i></span>
+    <span><kbd>T</kbd><i data-i18n="Tour">Tour</i></span><span><kbd>G</kbd><i data-i18n="Guide">Guide</i></span><span><kbd>K</kbd><i data-i18n="Fireworks">Fireworks</i></span><span><kbd>Tab</kbd><i data-i18n="Console">Console</i></span>
+  </div>
+  <div id="gamepanel" class="hidden"></div>
+  <div id="meter" class="hidden"><div class="track"><div class="needle"></div></div><div class="mlabel"></div></div>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="floaters"></div>
+<div id="card" class="hidden" role="status"><div class="ct"></div><div class="cb"></div></div>
+<div id="caption" aria-live="polite"><div class="c1"></div><div class="c2"></div></div>
+<div id="coach" class="hidden" role="dialog" aria-live="polite"><div class="co-step"></div><div class="co-icon"></div><div class="co-t"></div><div class="co-b"></div><div class="co-bar"><i></i></div><button class="co-skip" data-i18n="Skip tutorial">Skip tutorial</button></div>
+<div id="showbar" class="hidden">
+  <div class="sb-title" data-i18n="The Grand Finale">The Grand Finale</div>
+  <div class="sb-track"><div class="sb-fill"></div></div>
+  <div class="sb-hint" data-i18n="Any key or click — leave the crane camera (the show keeps playing around you)">Any key or click — leave the crane camera (the show keeps playing around you)</div>
+</div>
+<div id="photoui" class="hidden">
+  <h3 data-i18n="Photo Mode">Photo Mode</h3>
+  <div class="pr"><span data-i18n="Focus">Focus</span><b id="pf">12.0 m</b><kbd>wheel</kbd></div>
+  <div class="pr"><span data-i18n="Aperture">Aperture</span><b id="pa">0.6</b><kbd>[ ]</kbd></div>
+  <div class="pr"><span data-i18n="Lens">Lens</span><b id="pv">50°</b><kbd>− =</kbd></div>
+  <div class="pr"><span data-i18n="Grade">Grade</span><b id="pg">Cinematic</b><kbd>C</kbd></div>
+  <div class="pr"><span data-i18n="Time">Time</span><b id="pt">Flowing</b><kbd>X</kbd></div>
+  <div class="ph" data-i18n="WASD / E Q fly · Shift fast">WASD / E Q fly · Shift fast</div>
+  <div class="ph" data-i18n="Enter capture · H hide panel · P exit">Enter capture · H hide panel · P exit</div>
+</div>
+
+<div id="title" class="overlay">
+  <div class="title-lang"><button class="cx-pill" data-lang="en">English</button><button class="cx-pill" data-lang="zh">中文</button></div>
+  <a class="park-link" href="playground.html"><span class="pl-star">♥</span><span><b data-i18n="Visit Sweetheart Park">Visit Sweetheart Park</b><small data-i18n="A fairytale amusement park">A fairytale amusement park</small></span></a>
+  <div class="logo">HOLLOWMOOR</div>
+  <div class="tag" data-i18n="A Halloween Night Carnival · Gates open at dusk, close at never">A Halloween Night Carnival · Gates open at dusk, close at never</div>
+  <div class="rule"></div>
+  <div id="loadwrap">
+    <div id="loadbar"><i></i></div>
+    <div class="loadrow"><span id="loadtxt">Summoning the fog…</span><span id="loadpct">0%</span></div>
+    <div id="loadtip"></div>
+  </div>
+  <div id="startwrap" class="hidden">
+    <div class="btns">
+      <button class="btn primary" id="bEnter"><span data-i18n="Enter the Park">Enter the Park</span></button>
+      <button class="btn" id="bTour" data-i18n="Cinematic Tour">Cinematic Tour</button>
+      <button class="btn finale" id="bFinale" data-i18n="Grand Finale">Grand Finale</button>
+    </div>
+    <div id="savenote" class="hidden"></div>
+    <div class="qrow"><span data-i18n="Quality">Quality</span>
+      <button class="btn sm" data-q="auto" data-i18n="Auto">Auto</button><button class="btn sm" data-q="low" data-i18n="low">Low</button><button class="btn sm" data-q="medium" data-i18n="medium">Medium</button>
+      <button class="btn sm" data-q="high" data-i18n="high">High</button><button class="btn sm" data-q="ultra" data-i18n="ultra">Ultra</button>
+    </div>
+    <div class="qinfo"></div>
+    <div class="help"><span data-i18n="Eleven districts · 30 attractions · rides, games, shows and a Grand Finale · 13 lost souls to free">Eleven districts · 30 attractions · rides, games, shows and a Grand Finale · 13 lost souls to free</span><br>
+      <span class="desk-only" data-i18n="Headphones recommended. Click to capture the mouse · Tab opens the control console · Esc releases.">Headphones recommended. Click to capture the mouse · Tab opens the control console · Esc releases.</span>
+      <span class="touch-only" data-i18n="Headphones recommended. Left thumb moves, right thumb looks, buttons on the right act.">Headphones recommended. Left thumb moves, right thumb looks, buttons on the right act.</span></div>
+  </div>
+</div>
+
+<div id="menu" class="overlay hidden">
+  <div class="panel menu-panel">
+    <aside class="mp-side">
+      <h2>HOLLOWMOOR</h2>
+      <div class="tag" data-i18n="The night is paused. The dead are patient.">The night is paused. The dead are patient.</div>
+      <div class="mp-actions">
+        <button class="btn primary" data-a="resume"><span data-icon="play"></span><span data-i18n="Resume">Resume</span></button>
+        <button class="btn" data-a="console"><span data-icon="sliders"></span><span data-i18n="Control Console">Control Console</span></button>
+        <button class="btn" data-a="tour"><span data-icon="eye"></span><span data-i18n="Tour from here">Tour from here</span></button>
+        <button class="btn" data-a="photo"><span data-icon="camera"></span><span data-i18n="Photo Mode">Photo Mode</span></button>
+        <button class="btn finale" data-a="finale"><span data-icon="spark"></span><span data-i18n="Grand Finale">Grand Finale</span></button>
+        <button class="btn" data-a="witch"><span data-icon="moon"></span><span data-i18n="Ring the Bell">Ring the Bell</span></button>
+        <a class="btn" href="playground.html"><span data-icon="star"></span><span data-i18n="Visit Sweetheart Park">Visit Sweetheart Park</span></a>
+      </div>
+      <div class="mp-set">
+        <div class="qrow left"><span data-i18n="Quality">Quality</span>
+          <button class="btn sm" data-q="auto" data-i18n="Auto">Auto</button><button class="btn sm" data-q="low" data-i18n="low">Low</button><button class="btn sm" data-q="medium" data-i18n="medium">Medium</button>
+          <button class="btn sm" data-q="high" data-i18n="high">High</button><button class="btn sm" data-q="ultra" data-i18n="ultra">Ultra</button>
+        </div>
+        <label class="vrow"><span data-i18n="VOLUME">VOLUME</span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8"></label>
+        <div class="qinfo"></div>
+      </div>
+    </aside>
+    <section class="mp-main">
+      <h4 data-i18n="Quick Travel">Quick Travel</h4>
+      <div class="zones" id="zoneBtns"></div>
+      <h4 data-i18n="Attractions">Attractions</h4>
+      <div id="acts"></div>
+      <div id="stats"></div>
+    </section>
+  </div>
+</div>
+<div id="fatal" class="overlay hidden"><div class="panel fatal-panel"><div class="logo small">HOLLOWMOOR</div><h2></h2><p></p><button class="btn primary" onclick="location.reload()">Reload</button></div></div>
+<div id="fade"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

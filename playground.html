@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#2A1B3D" />
+<title>Sweetheart Park</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A1%3C/text%3E%3C/svg%3E" />
+<!-- Sweetheart Park — a cinematic fairytale amusement park, built entirely in code. Entry: js/playground/main.js · tunables: js/playground/config.js -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- fonts load without blocking the first paint (a slow font CDN used to leave the page blank for seconds) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Quicksand:wght@500;600;700&display=swap" media="print" onload="this.media='all'" />
+<style>
+  /* the loading screen paints on the very first frame: everything it needs is right here */
+  html,body{margin:0;height:100%;background:#0B0A22}
+  #loader{position:fixed;inset:0;z-index:50;overflow:hidden;display:grid;place-items:center;transition:opacity 1.4s ease;
+    background:linear-gradient(180deg,#070820 0%,#141236 38%,#2B1D4E 68%,#5A3160 88%,#7A4466 100%)}
+  #loader.done{opacity:0;pointer-events:none}
+  #loader .ld-stars,#loader .ld-stars2{position:absolute;inset:-50% 0 0 0;background-repeat:repeat}
+  #loader .ld-stars,#loader .ld-stars2{will-change:opacity}
+  #loader .ld-stars{background-image:radial-gradient(1px 1px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 120px 80px,#ffe9c9,transparent),radial-gradient(1.5px 1.5px at 200px 140px,#fff,transparent),radial-gradient(1px 1px at 310px 60px,#d9e2ff,transparent),radial-gradient(1px 1px at 260px 210px,#fff,transparent),radial-gradient(1px 1px at 60px 190px,#ffd9ec,transparent);background-size:340px 240px;opacity:.75;animation:ldTw 5s ease-in-out infinite}
+  #loader .ld-stars2{background-image:radial-gradient(1px 1px at 90px 40px,#fff,transparent),radial-gradient(2px 2px at 230px 110px,#fff7e6,transparent),radial-gradient(1px 1px at 160px 200px,#e8ecff,transparent);background-size:290px 260px;opacity:.5;animation:ldTw 7s ease-in-out infinite reverse}
+  @keyframes ldTw{50%{opacity:.25}}
+  #loader .ld-milky{position:absolute;left:-20%;top:-10%;width:140%;height:60%;transform:rotate(-14deg);background:radial-gradient(ellipse at 50% 50%,rgba(220,200,255,.16),rgba(255,180,220,.06) 40%,transparent 70%);filter:blur(10px)}
+  #loader .ld-shoot{position:absolute;top:18%;left:70%;width:140px;height:1.5px;background:linear-gradient(90deg,rgba(255,255,255,.9),transparent);transform:rotate(-24deg);opacity:0;animation:ldShoot 6s ease-in 1.5s infinite}
+  @keyframes ldShoot{0%{opacity:0;transform:translate(0,0) rotate(-24deg)}4%{opacity:1}12%{opacity:0;transform:translate(-320px,140px) rotate(-24deg)}100%{opacity:0}}
+  #loader .ld-castle{stroke:none;position:absolute;left:50%;bottom:0;width:min(900px,130vw)!important;height:auto!important;max-height:42vh;transform:translateX(-50%)}
+  #loader .ld-halo{position:absolute;left:50%;bottom:-12vh;width:min(1000px,140vw);height:46vh;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 70%,rgba(255,196,150,.32),rgba(255,150,190,.12) 45%,transparent 70%)}
+  #loader .ld-castle .w{fill:#FFD596}
+  #loader .ld-card{position:relative;text-align:center;padding:24px;transform:translateY(-8vh)}
+  #loader .ld-kicker{font:600 11px/1 'Quicksand',system-ui,sans-serif;letter-spacing:.42em;text-transform:uppercase;color:rgba(255,226,190,.7)}
+  #loader .logo{font:italic 500 clamp(44px,7vw,84px)/1.05 'Cormorant Garamond',Georgia,'Times New Roman',serif;letter-spacing:.02em;margin:14px 0 6px;
+    background:linear-gradient(180deg,#FFF6E6 0%,#FFD9A8 55%,#F2A9C4 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+  #loader .ld-sub{font:italic 500 clamp(15px,1.7vw,19px) 'Cormorant Garamond',Georgia,serif;color:rgba(240,228,255,.75);letter-spacing:.08em}
+  #loadbar{position:relative;width:min(300px,64vw);height:1px;margin:34px auto 14px;background:rgba(255,236,210,.18);overflow:visible;border-radius:0}
+  #loadbar i{position:relative;display:block;height:100%;width:100%;transform:scaleX(.02);transform-origin:0 50%;background:linear-gradient(90deg,rgba(255,214,150,.15),#FFE2B0);box-shadow:0 0 8px rgba(255,210,150,.6);transition:transform .6s cubic-bezier(.2,.7,.2,1);border-radius:0;will-change:transform}
+  #loadtxt{font:italic 500 14px 'Cormorant Garamond',Georgia,serif;color:rgba(240,228,255,.6);letter-spacing:.06em}
+  .hidden{display:none!important}
+</style>
+<link rel="stylesheet" href="css/playground.css" />
+<script>
+  // Early guard: friendly screens for no-WebGL, file://, failed downloads and boot errors (runs before any module).
+  (function () {
+    var zh = false; try { var s = localStorage.getItem('hollowmoor-lang'); zh = s ? s === 'zh' : /^zh/i.test(navigator.language || ''); } catch (e) {}
+    function fail(title, body) {
+      if (window.__PG_BOOTED) return; var el = document.getElementById('fatal'); if (!el) return;
+      el.querySelector('h2').textContent = title; el.querySelector('p').textContent = body; el.classList.remove('hidden');
+    }
+    var c = document.createElement('canvas'), gl = null; try { gl = c.getContext('webgl2'); } catch (e) {}
+    window.addEventListener('DOMContentLoaded', function () {
+      if (!gl) fail(zh ? '需要 WebGL 2' : 'WebGL 2 is required', zh ? '你的浏览器或显卡未启用 WebGL 2。请使用最新版 Chrome、Edge、Firefox 或 Safari，并开启硬件加速。' : 'Your browser or GPU has WebGL 2 turned off. Use a current Chrome, Edge, Firefox or Safari with hardware acceleration enabled.');
+      if (location.protocol === 'file:') fail(zh ? '请通过本地服务器打开' : 'Open through a local server', zh ? '浏览器禁止从本地文件加载模块。请在项目文件夹运行：python3 -m http.server 8765，然后访问 http://localhost:8765/playground.html' : 'Browsers block ES modules from file://. In the project folder run: python3 -m http.server 8765 — then open http://localhost:8765/playground.html');
+    });
+    window.addEventListener('error', function (e) {
+      if (e.target && e.target.tagName === 'SCRIPT') fail(zh ? '资源下载失败' : 'A download failed', zh ? '无法加载所需文件（Three.js 来自 CDN）。请检查网络后重新加载。' : 'A required file could not be loaded (Three.js comes from a CDN). Check your connection and reload.');
+      else if (!window.__PG_BOOTED && !(e.target && e.target.tagName)) fail(zh ? '启动时出错' : 'Something went wrong while starting', (e.message || '') + (zh ? ' —— 请重新加载页面。' : ' — please reload the page.'));
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) { if (!window.__PG_BOOTED) fail(zh ? '启动时出错' : 'Something went wrong while starting', String(e.reason && e.reason.message || e.reason)); });
+    setTimeout(function () { if (!window.__PG_BOOTED && !window.__PG_LOADING) fail(zh ? '加载时间过长' : 'This is taking too long', zh ? '乐园没有开始加载，可能是网络问题导致 Three.js 无法下载。请重新加载。' : 'The park never started loading — usually Three.js could not be downloaded. Please reload.'); }, 20000);
+  })();
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="c" aria-label="Sweetheart Park 3D view"></canvas>
+<div id="perf" class="hidden" aria-hidden="true"></div>
+<div id="crosshair" aria-hidden="true"></div>
+<div id="reticle" aria-hidden="true"></div>
+<div id="flash" aria-hidden="true"></div>
+<div id="countdown" aria-hidden="true"></div>
+
+<div id="loader">
+  <div class="ld-milky"></div><div class="ld-halo"></div><div class="ld-stars"></div><div class="ld-stars2"></div><div class="ld-shoot"></div>
+  <svg class="ld-castle" viewBox="0 0 760 220" aria-hidden="true">
+    <path fill="#0E0A22" d="M0 220V196Q120 176 240 188L250 150H262V120L270 96L278 120V150H292L296 104H304L312 70L320 104H330V132H350V92L358 60L366 92V132H372L380 40L388 10L396 40L404 132H410V92L418 60L426 92V132H446V104H456L464 70L472 104H480L484 150H498V120L506 96L514 120V150H526L536 188Q640 176 760 196V220Z"/>
+    <rect class="w" x="384" y="54" width="8" height="12" rx="4"/><rect class="w" x="355" y="104" width="6" height="10" rx="3"/><rect class="w" x="415" y="104" width="6" height="10" rx="3"/>
+    <rect class="w" x="378" y="150" width="20" height="26" rx="10"/><rect class="w" x="306" y="120" width="5" height="9" rx="2.5"/><rect class="w" x="465" y="120" width="5" height="9" rx="2.5"/>
+    <rect class="w" x="336" y="150" width="6" height="10" rx="3"/><rect class="w" x="434" y="150" width="6" height="10" rx="3"/><rect class="w" x="267" y="160" width="5" height="8" rx="2.5"/><rect class="w" x="503" y="160" width="5" height="8" rx="2.5"/>
+  </svg>
+  <div class="ld-card">
+    <div class="ld-kicker" data-i18n="An evening at">An evening at</div>
+    <div class="logo" data-i18n="Sweetheart Park">Sweetheart Park</div>
+    <div class="ld-sub" data-i18n="A fairytale amusement park at night">A fairytale amusement park at night</div>
+    <div id="loadbar"><i></i></div>
+    <div id="loadtxt">Lighting the lanterns…</div>
+  </div>
+</div>
+
+<div id="ui" class="hidden">
+  <header id="topbar" class="glass">
+    <div class="brand"><span class="bh">♥</span><span class="bn" data-i18n="Sweetheart Park">Sweetheart Park</span></div>
+    <div class="seg" role="group" data-i18n-title="Camera">
+      <button data-cam="first"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span data-i18n="First person">First person</span></button>
+      <button data-cam="cinematic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3z"/></svg><span data-i18n="Cinematic">Cinematic</span></button>
+      <button data-cam="tour"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg><span data-i18n="Tour">Tour</span></button>
+    </div>
+    <div class="tools">
+      <button id="bMap" class="ib" data-i18n-title="Park map (M)"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/></svg></button>
+      <button id="bAtlas" class="ib" data-i18n-title="Attractions"><svg viewBox="0 0 24 24"><path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+      <button id="bWorld" class="ib" data-i18n-title="World settings"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg></button>
+      <button id="bSound" class="ib" data-i18n-title="Sound"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="w" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg></button>
+      <button id="bFull" class="ib" data-i18n-title="Fullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button id="bInfo" class="ib" data-i18n-title="About"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
+    </div>
+  </header>
+
+  <!-- world settings -->
+  <section id="world" class="glass hidden">
+    <div class="dh"><h3 data-i18n="Command Center">Command Center</h3><span class="fc">Tab</span></div>
+    <nav class="tabs"><button class="on" data-tab="wld" data-i18n="World">World</button><button data-tab="atmo" data-i18n="Atmosphere">Atmosphere</button><button data-tab="cam" data-i18n="Camera">Camera</button><button data-tab="ply" data-i18n="Player">Player</button><button data-tab="prog" data-i18n="Progress">Progress</button><button data-tab="audio" data-i18n="Audio">Audio</button><button data-tab="disp" data-i18n="Graphics">Graphics</button></nav>
+    <div class="tabpane" data-pane="wld">
+      <div class="lbl" data-i18n="Weather">Weather</div>
+      <div class="chips"><button data-weather="clear" data-i18n="Clear">Clear</button><button data-weather="breezy" data-i18n="Breezy">Breezy</button><button data-weather="misty" data-i18n="Misty">Misty</button><button data-weather="rain" data-i18n="Rain">Rain</button></div>
+      <div class="lbl" data-i18n="Attractions">Attractions</div>
+      <div class="row2"><button id="bAllStart" class="btn"><span data-i18n="Start all rides">Start all rides</span></button><button id="bAllStop" class="btn ghost"><span data-i18n="Stop all rides">Stop all rides</span></button></div>
+      <div class="lbl" data-i18n="Park events">Park events</div>
+      <div class="chips"><button data-event="fountains" data-i18n="Fountain show">Fountain show</button><button data-event="lights" data-i18n="Light show">Light show</button><button data-event="lanterns" data-i18n="Sky lanterns">Sky lanterns</button><button data-event="parade" data-i18n="Lantern parade">Lantern parade</button><button data-event="meteors" data-i18n="Meteor shower">Meteor shower</button></div>
+      <div class="row2"><button id="bFireworks" class="btn primary"><span>🎆 </span><span data-i18n="Fireworks show">Fireworks show</span></button><button id="bMap2" class="btn ghost"><span data-i18n="Park map">Park map</span></button></div>
+    </div>
+    <div class="tabpane hidden" data-pane="atmo">
+      <div class="lbl" data-i18n="Weather">Weather</div>
+      <div class="chips"><button data-weather="clear" data-i18n="Clear">Clear</button><button data-weather="breezy" data-i18n="Breezy">Breezy</button><button data-weather="misty" data-i18n="Misty">Misty</button><button data-weather="rain" data-i18n="Rain">Rain</button></div>
+      <label class="sl"><span data-i18n="Lighting">Lighting</span><input type="range" data-set="light" min="0.4" max="1.6" step="0.05" data-fmt="%"><output></output></label>
+      <label class="sl"><span data-i18n="Atmosphere">Atmosphere</span><input type="range" data-set="fog" min="0.2" max="3" step="0.05" data-fmt="%"><output></output></label>
+      <label class="sl"><span data-i18n="Bloom">Bloom</span><input type="range" data-set="bloom" min="0" max="2" step="0.05" data-fmt="%"><output></output></label>
+      <label class="tg"><span data-i18n="Particles">Particles</span><input type="checkbox" id="tParticles" checked><i></i></label>
+    </div>
+    <div class="tabpane hidden" data-pane="cam">
+      <label class="sl"><span data-i18n="Camera speed">Camera speed</span><input type="range" data-set="cameraSpeed" min="0.3" max="2" step="0.05" data-fmt="%"><output></output></label>
+      <div class="chips"><button data-cam="first" data-i18n="First person">First person</button><button data-cam="cinematic" data-i18n="Cinematic">Cinematic</button><button data-cam="tour" data-i18n="Tour">Tour</button><button data-cam="overview" data-i18n="Overview">Overview</button></div>
+      <label class="sl"><span data-i18n="Field of view">Field of view</span><input type="range" data-set="fov" min="40" max="85" step="1" data-fmt="°"><output></output></label>
+      <label class="sl"><span data-i18n="Mouse sensitivity">Mouse sensitivity</span><input type="range" data-set="sens" min="0.3" max="2.5" step="0.05" data-fmt="%"><output></output></label>
+      <label class="tg"><span data-i18n="Invert vertical look">Invert vertical look</span><input type="checkbox" id="tInvert"><i></i></label>
+      <label class="tg"><span data-i18n="Depth of field (cinematic camera)">Depth of field (cinematic camera)</span><input type="checkbox" id="tDof" checked><i></i></label>
+      <button id="bHome" class="btn ghost"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg><span data-i18n="Back to walking">Back to walking</span></button>
+    </div>
+    <div class="tabpane hidden" data-pane="ply">
+      <div class="lbl" data-i18n="Outfit">Outfit</div>
+      <div class="chips outfits"><button data-outfit="0"><i style="--c:#D98FA6"></i><span data-i18n="Rose Champagne">Rose Champagne</span></button><button data-outfit="1"><i style="--c:#9C88C9"></i><span data-i18n="Lavender Dusk">Lavender Dusk</span></button><button data-outfit="2"><i style="--c:#7FB39A"></i><span data-i18n="Garden Mint">Garden Mint</span></button><button data-outfit="3"><i style="--c:#3E5A8C"></i><span data-i18n="Midnight Blue">Midnight Blue</span></button></div>
+      <label class="sl"><span data-i18n="Walking pace">Walking pace</span><input type="range" data-set="walk" min="0.7" max="1.5" step="0.05" data-fmt="%"><output></output></label>
+      <p class="note" data-i18n="placeholder-note">Rosalind is a temporary procedural character (a fully jointed rig built in code). Drop a rigged glTF with Idle / Walk / Run / Jump clips at assets/character/hero.glb and it replaces her automatically.</p>
+    </div>
+    <div class="tabpane hidden" data-pane="prog">
+      <div class="lbl"><span data-i18n="Quests">Quests</span></div>
+      <ul id="questLog" class="plist"></ul>
+      <div class="lbl"><span data-i18n="Achievements">Achievements</span> <b id="achCount"></b></div>
+      <ul id="achList" class="plist"></ul>
+      <div class="lbl"><span data-i18n="Ride photo album">Ride photo album</span></div>
+      <div id="album"><p class="note" data-i18n="Your on-ride photos appear here.">Your on-ride photos appear here.</p></div>
+      <button id="bReset" class="btn ghost"><span data-i18n="Reset all progress">Reset all progress</span></button>
+    </div>
+    <div class="tabpane hidden" data-pane="audio">
+      <label class="sl"><span data-i18n="Master">Master</span><input type="range" data-level="master" min="0" max="1" step="0.01" data-fmt="%"><output></output></label>
+      <label class="sl"><span data-i18n="Music">Music</span><input type="range" data-level="music" min="0" max="1" step="0.01" data-fmt="%"><output></output></label>
+      <label class="sl"><span data-i18n="Ambience">Ambience</span><input type="range" data-level="ambience" min="0" max="1" step="0.01" data-fmt="%"><output></output></label>
+      <label class="sl"><span data-i18n="Effects">Effects</span><input type="range" data-level="sfx" min="0" max="1" step="0.01" data-fmt="%"><output></output></label>
+    </div>
+    <div class="tabpane hidden" data-pane="disp">
+      <div class="lbl" data-i18n="Quality">Quality</div>
+      <div class="chips"><button data-q="auto" data-i18n="Auto">Auto</button><button data-q="low" data-i18n="Low">Low</button><button data-q="medium" data-i18n="Medium">Medium</button><button data-q="high" data-i18n="High">High</button></div>
+      <div class="lbl" data-i18n="Language">Language</div>
+      <div class="chips"><button data-lang="en">English</button><button data-lang="zh">中文</button></div>
+      <label class="tg"><span data-i18n="Ambient occlusion">Ambient occlusion</span><input type="checkbox" id="tAO" checked><i></i></label>
+      <label class="tg"><span data-i18n="Grass">Grass</span><input type="checkbox" id="tGrass" checked><i></i></label>
+      <label class="tg"><span data-i18n="Performance stats">Performance stats</span><input type="checkbox" id="tStats"><i></i></label>
+      <a class="hm" href="index.html">☾ <span data-i18n="Back to Hollowmoor">Back to Hollowmoor</span></a>
+    </div>
+  </section>
+
+  <!-- atlas -->
+  <aside id="atlas" class="glass hidden">
+    <div class="dh"><h3 data-i18n="Attractions">Attractions</h3><span class="fc"><span data-i18n="Discovered">Discovered</span> <b id="foundCount">0</b></span></div>
+    <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input id="search" type="search" autocomplete="off" data-i18n-ph="Search the park…" placeholder="Search the park…"></label>
+    <div class="chips filt"><button class="on" data-filter="all" data-i18n="All">All</button><button data-filter="rides" data-i18n="Rides">Rides</button><button data-filter="thrills" data-i18n="Thrills">Thrills</button><button data-filter="games" data-i18n="Games">Games</button><button data-filter="experiences" data-i18n="Experiences">Experiences</button></div>
+    <div id="attrList"></div>
+  </aside>
+
+  <!-- attraction console -->
+  <section id="card" class="glass hidden" aria-live="polite">
+    <button id="cClose" class="x" data-i18n-title="Close">×</button>
+    <div class="ch"><span class="ci">🎡</span><div><div class="cz"></div><h2 class="cn"></h2></div></div>
+    <p class="cd"></p>
+    <div class="cm"><span class="cs"></span><span class="cx"></span></div>
+    <div id="cHunt" class="hidden"><div class="bar"><i></i></div><p id="cRiddle"></p></div>
+    <div id="cRunRow" class="row2"><button id="cRun" class="btn"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg><span>Stop</span></button>
+      <label class="sl mini"><span data-i18n="Speed">Speed</span><input id="cSpeed" type="range" min="0.25" max="2" step="0.05" value="1" data-fmt="×"><output></output></label></div>
+    <div class="cb">
+      <button id="cPlay" class="btn primary"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>Play</span></button>
+      <button id="cAlt" class="btn"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg><span></span></button>
+      <button id="cRide" class="btn"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span data-i18n="Ride view">Ride view</span></button>
+      <button id="cSeat" class="btn ghost"><svg viewBox="0 0 24 24"><path d="M7 4v9h10M7 13l-2 7M17 13l2 7M7 9h7"/></svg><span>Seat 1</span></button>
+      <button id="cHint" class="btn ghost"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span data-i18n="Show me where">Show me where</span></button>
+      <button id="cGuide" class="btn"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 6.6L21 9l-5.2 4.2L17.6 20 12 16.4 6.4 20l1.8-6.8L3 9l6.6-.4z"/></svg><span data-i18n="Guide me">Guide me</span></button>
+      <button id="cFocus" class="btn ghost"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span data-i18n="Travel here">Travel here</span></button>
+    </div>
+  </section>
+
+  <!-- game HUD -->
+  <section id="game" class="glass hidden">
+    <div id="gTitle"></div>
+    <div id="gStats"></div>
+    <div id="gPower" class="hidden"><span data-i18n="Power">Power</span><div class="meter"><i></i><b class="sweet"></b></div></div>
+    <div id="gLanes" class="hidden"><div class="hitline"></div></div>
+    <div id="gJudge" class="hidden"></div>
+    <div id="gPad" class="hidden">
+      <div class="pad"><button data-pad="0,-1">▲</button><button data-pad="-1,0">◀</button><button data-pad="1,0">▶</button><button data-pad="0,1">▼</button></div>
+      <button id="gGrab" class="btn primary" data-i18n="GRAB">GRAB</button>
+    </div>
+    <div class="gb"><button id="gAgain" class="btn primary hidden" data-i18n="Play again">Play again</button><button id="gExit" class="btn ghost" data-i18n="Exit game">Exit game</button></div>
+  </section>
+
+  <!-- explorer HUD -->
+  <div id="hudPlayer" class="glass">
+    <div class="pa"><span>R</span><i id="pLevel">1</i></div>
+    <div class="pi"><b>Rosalind</b><span id="hudPlace"></span><div id="pXP" class="xp"><i></i></div><small><span id="pPts">0</span> ♥</small></div>
+    <div class="pc"><span title="Golden hearts">💛 <b id="cHearts">0/12</b></span><span title="Love letters"><svg class="ic-letter" viewBox="0 0 28 20" aria-hidden="true"><defs><linearGradient id="envG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE6EE"/><stop offset="1" stop-color="#FFB6CC"/></linearGradient></defs><rect x="1" y="1" width="26" height="18" rx="3.5" fill="url(#envG)" stroke="#F2B65C" stroke-width="1.2"/><path d="M2.2 2.6 L14 11.4 L25.8 2.6" fill="#FFCADB" stroke="#F28FB0" stroke-width="1.3" stroke-linejoin="round"/><path d="M14 9.2c-1-1.6-3.7-.9-3.1 1.2.4 1.3 3.1 3.1 3.1 3.1s2.7-1.8 3.1-3.1c.6-2.1-2.1-2.8-3.1-1.2z" fill="#E0457A" stroke="none"/><path d="M24.2 13.2l.6 1.3 1.3.6-1.3.6-.6 1.3-.6-1.3-1.3-.6 1.3-.6z" fill="#FFF3C4" stroke="none"/></svg> <b id="cLetters">0/8</b></span><span title="Attractions found">🎠 <b id="cFound">0</b></span></div>
+    <div id="pStam"><i></i></div>
+  </div>
+  <div id="eventBanner" class="glass hidden"><span class="ei"></span><div><small data-i18n="Coming up">Coming up</small><b></b><span class="ew"></span></div><span class="ec"></span></div>
+  <div id="hudLoc"><small data-i18n="Now entering">Now entering</small><b></b></div>
+  <div id="minimap"><canvas width="200" height="200"></canvas></div>
+  <div id="quests" class="glass"><h5 data-i18n="Quests">Quests</h5><ul></ul><h5 class="dh5" data-i18n="Tonight's challenges">Tonight's challenges</h5><ol id="daily"></ol></div>
+  <div id="prompt" class="hidden"><kbd>E</kbd><span class="pv"></span><span class="pn"></span></div>
+  <div id="keys"><span class="unlocked" data-i18n="Click the view to look around">Click the view to look around</span><span><kbd>W A S D</kbd> <i data-i18n="move">move</i></span><span><kbd>Shift</kbd> <i data-i18n="sprint">sprint</i></span><span><kbd>Space</kbd> <i data-i18n="jump">jump</i></span><span><kbd>E</kbd> <i data-i18n="interact">interact</i></span><span><kbd>C</kbd> <i data-i18n="camera">camera</i></span><span><kbd>M</kbd> <i data-i18n="map">map</i></span><span><kbd>F</kbd> <i data-i18n="fireworks">fireworks</i></span><span><kbd>Tab</kbd> <i data-i18n="command center">command center</i></span><span><kbd>Esc</kbd> <i data-i18n="free the mouse">free the mouse</i></span></div>
+  <div id="bigmap" class="modal hidden"><div class="glass mc map"><button class="x">×</button><h4 data-i18n="Park map">Park map</h4><canvas></canvas><p data-i18n="Click an attraction and follow the lights">Click an attraction and follow the lights</p></div></div>
+  <div id="letter" class="modal hidden"><div class="mc letterbox"><button class="x">×</button><div class="ln"></div><p></p><div class="sig" data-i18n="— your secret admirer ♥">— your secret admirer ♥</div></div></div>
+
+  <div id="ridepill" class="glass hidden"><span class="rp-dot"></span><div class="rp-t"><b id="rideName"></b><span id="rideStats" class="rs"></span><small><span data-i18n="Mouse to look around">Mouse to look around</span><span id="rideHint"></span> · <kbd>E</kbd> / <kbd>Esc</kbd> <span data-i18n="to get off">to get off</span></small><i id="rideBar"><em></em></i></div><button id="rideExit" class="btn ghost" data-i18n="Exit ride">Exit ride</button></div>
+  <div id="photos" class="modal hidden"><div class="glass mc ph"><button class="x" id="phClose">×</button><h4 data-i18n="Your photo strip">Your photo strip</h4><img id="phImg" alt=""><a id="phSave" class="btn primary" data-i18n="Download">Download</a></div></div>
+  <div id="toasts" aria-live="polite"></div>
+  <div id="caption"></div>
+
+
+  <div id="about" class="modal hidden">
+    <div class="glass mc">
+      <button class="x" data-close="#about">×</button>
+      <div class="logo small" data-i18n="Sweetheart Park">Sweetheart Park</div>
+      <p class="lead" data-i18n="Walk in, ride everything, find every secret.">Walk in, ride everything, find every secret.</p>
+      <h4 data-i18n="Controls">Controls</h4>
+      <dl>
+        <dt>W A S D</dt><dd data-i18n="Walk (relative to the camera)">Walk (relative to the camera)</dd>
+        <dt data-i18n="Mouse">Mouse</dt><dd data-i18n="Look around (click the view to capture the mouse; right-drag works too)">Look around (click the view to capture the mouse; right-drag works too)</dd>
+        <dt>Shift · Space</dt><dd data-i18n="Sprint · Jump">Sprint · Jump</dd>
+        <dt>E</dt><dd data-i18n="Interact with what's in front of you">Interact with what's in front of you</dd>
+        <dt>C</dt><dd data-i18n="Third person → first person → cinematic">Third person → first person → cinematic</dd>
+        <dt data-i18n="Scroll">Scroll</dt><dd data-i18n="Camera distance">Camera distance</dd>
+        <dt>M · J · Tab</dt><dd data-i18n="Map · Attractions · Command Center">Map · Attractions · Command Center</dd>
+        <dt>F</dt><dd data-i18n="Fireworks">Fireworks</dd>
+        
+        <dt>Esc</dt><dd data-i18n="Free the mouse · leave a ride, game or panel">Free the mouse · leave a ride, game or panel</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<div id="fatal" class="modal hidden"><div class="glass mc"><div class="logo small">Sweetheart Park</div><h2></h2><p></p><button class="btn primary" onclick="location.reload()">Reload</button></div></div>
+
+<script type="module" src="js/playground/main.js"></script>
+</body>
+</html>
